@@ -786,6 +786,7 @@ interface_proto_event_cb(struct interface_proto_state *state, enum interface_pro
 		netifd_log_message(L_NOTICE, "Interface '%s' is now down\n", iface->name);
 		enum interface_state const old_state = iface->state;
 		mark_interface_down(iface);
+		interface_write_resolv_conf(iface->jail);
 		if (iface->main_dev.dev)
 			device_release(&iface->main_dev);
 		if (iface->l3_dev.dev)
@@ -793,7 +794,7 @@ interface_proto_event_cb(struct interface_proto_state *state, enum interface_pro
 		interface_handle_config_change(iface);
 		if (old_state != IFS_SETUP)
 			netifd_ubus_actiond_trigger_event();
-		break;
+		return;
 	case IFPEV_LINK_LOST:
 		if (iface->state != IFS_UP)
 			return;
