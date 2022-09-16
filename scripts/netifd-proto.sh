@@ -93,6 +93,14 @@ proto_close_tunnel() {
 	proto_close_nested
 }
 
+proto_add_device() {
+	proto_add_nested "device"
+}
+
+proto_close_device() {
+	proto_close_nested
+}
+
 proto_add_data() {
 	proto_add_nested "data"
 }
