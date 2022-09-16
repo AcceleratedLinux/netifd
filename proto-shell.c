@@ -108,10 +108,10 @@ proto_shell_check_dependencies(struct proto_shell_state *state)
 
 static void
 proto_shell_if_up_cb(struct interface_user *dep, struct interface *iface,
-		     enum interface_event ev);
+			 enum interface_event ev);
 static void
 proto_shell_if_down_cb(struct interface_user *dep, struct interface *iface,
-		       enum interface_event ev);
+			   enum interface_event ev);
 
 static void
 proto_shell_update_host_dep(struct proto_shell_dependency *dep)
@@ -156,7 +156,7 @@ proto_shell_clear_host_dep(struct proto_shell_state *state)
 
 static int
 proto_shell_handler(struct interface_proto_state *proto,
-		    enum interface_proto_cmd cmd, bool force)
+			enum interface_proto_cmd cmd, bool force)
 {
 	struct proto_shell_state *state;
 	struct proto_shell_handler *handler;
@@ -251,7 +251,7 @@ proto_shell_handler(struct interface_proto_state *proto,
 
 static void
 proto_shell_if_up_cb(struct interface_user *dep, struct interface *iface,
-		     enum interface_event ev)
+			 enum interface_event ev)
 {
 	struct proto_shell_dependency *pdep;
 
@@ -264,7 +264,7 @@ proto_shell_if_up_cb(struct interface_user *dep, struct interface *iface,
 
 static void
 proto_shell_if_down_cb(struct interface_user *dep, struct interface *iface,
-		       enum interface_event ev)
+			   enum interface_event ev)
 {
 	struct proto_shell_dependency *pdep;
 	struct proto_shell_state *state;
@@ -296,17 +296,17 @@ proto_shell_task_finish(struct proto_shell_state *state,
 	case S_SETUP:
 		if (task == &state->proto_task)
 			proto_shell_handler(&state->proto, PROTO_CMD_TEARDOWN,
-					    false);
+						false);
 		else if (task == &state->script_task) {
 			if (state->renew_pending)
 				proto_shell_handler(&state->proto,
-						    PROTO_CMD_RENEW, false);
+							PROTO_CMD_RENEW, false);
 			else if (!(state->handler->proto.flags & PROTO_FLAG_NO_TASK) &&
 				 !state->proto_task.uloop.pending &&
 				 state->sm == S_SETUP)
 				proto_shell_handler(&state->proto,
-						    PROTO_CMD_TEARDOWN,
-						    false);
+							PROTO_CMD_TEARDOWN,
+							false);
 
 			/* check up status after setup attempt by this script_task */
 			if (state->sm == S_SETUP && state->checkup_interval > 0) {
@@ -318,7 +318,7 @@ proto_shell_task_finish(struct proto_shell_state *state,
 
 	case S_SETUP_ABORT:
 		if (state->script_task.uloop.pending ||
-		    state->proto_task.uloop.pending)
+			state->proto_task.uloop.pending)
 			break;
 
 		/* completed aborting all tasks, now idle */
@@ -398,7 +398,7 @@ proto_shell_free(struct interface_proto_state *proto)
 
 static void
 proto_shell_parse_route_list(struct interface *iface, struct blob_attr *attr,
-			     bool v6)
+				 bool v6)
 {
 	struct blob_attr *cur;
 	size_t rem;
@@ -455,6 +455,18 @@ proto_shell_create_tunnel(const char *name, struct blob_attr *attr)
 	return dev;
 }
 
+static void
+proto_shell_device_apply_config(struct device *dev, struct blob_attr *attr)
+{
+	struct blob_attr *tb[__DEV_ATTR_MAX];
+
+	memset(tb, 0, sizeof(tb));
+	blobmsg_parse(device_attr_list.params, __DEV_ATTR_MAX, tb,
+			  blobmsg_data(attr), blobmsg_len(attr));
+	device_init_settings(dev, tb);
+	dev->set_state(dev, true);
+}
+
 enum {
 	NOTIFY_ACTION,
 	NOTIFY_ERROR,
@@ -468,6 +480,7 @@ enum {
 	NOTIFY_ROUTES,
 	NOTIFY_ROUTES6,
 	NOTIFY_TUNNEL,
+	NOTIFY_DEVICE,
 	NOTIFY_DATA,
 	NOTIFY_KEEP,
 	NOTIFY_HOST,
@@ -491,6 +504,7 @@ static const struct blobmsg_policy notify_attr[__NOTIFY_LAST] = {
 	[NOTIFY_ROUTES] = { .name = "routes", .type = BLOBMSG_TYPE_ARRAY },
 	[NOTIFY_ROUTES6] = { .name = "routes6", .type = BLOBMSG_TYPE_ARRAY },
 	[NOTIFY_TUNNEL] = { .name = "tunnel", .type = BLOBMSG_TYPE_TABLE },
+	[NOTIFY_DEVICE] = { .name = "device", .type = BLOBMSG_TYPE_TABLE },
 	[NOTIFY_DATA] = { .name = "data", .type = BLOBMSG_TYPE_TABLE },
 	[NOTIFY_KEEP] = { .name = "keep", .type = BLOBMSG_TYPE_BOOL },
 	[NOTIFY_HOST] = { .name = "host", .type = BLOBMSG_TYPE_STRING },
@@ -549,6 +563,9 @@ proto_shell_update_link(struct proto_shell_state *state, struct blob_attr *data,
 
 		if (!dev)
 			return UBUS_STATUS_INVALID_ARGUMENT;
+
+		if (tb[NOTIFY_DEVICE])
+			proto_shell_device_apply_config(dev, tb[NOTIFY_DEVICE]);
 
 		interface_set_l3_dev(iface, dev);
 		if (device_claim(&iface->l3_dev) < 0)
