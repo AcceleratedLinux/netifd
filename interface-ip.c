@@ -616,6 +616,8 @@ interface_update_proto_addr(struct vlist_tree *tree,
 			}
 		}
 	}
+
+	netifd_ubus_interface_ip_event(iface);
 }
 
 static bool
@@ -670,6 +672,8 @@ interface_update_proto_route(struct vlist_tree *tree,
 		route_new->iface = iface;
 		route_new->enabled = _enabled;
 	}
+
+	netifd_ubus_interface_ip_event(iface);
 }
 
 static void
@@ -1126,6 +1130,8 @@ interface_update_prefix(struct vlist_tree *tree,
 	if (node_new && (!prefix_new->iface || !prefix_new->iface->proto_ip.no_delegation))
 		list_add(&prefix_new->head, &prefixes);
 
+	if (tree)
+		netifd_ubus_interface_ip_event(ip->iface);
 }
 
 struct device_prefix*

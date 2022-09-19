@@ -282,6 +282,7 @@ mark_interface_down(struct interface *iface)
 	interface_ip_flush(&iface->proto_ip);
 	interface_flush_state(iface);
 	system_flush_routes();
+	netifd_ubus_interface_ip_event(iface);
 }
 
 void
@@ -733,6 +734,7 @@ interface_proto_event_cb(struct interface_proto_state *state, enum interface_pro
 		system_flush_routes();
 		iface->state = IFS_UP;
 		netifd_ubus_interface_state_event(iface);
+		netifd_ubus_interface_ip_event(iface);
 		iface->start_time = system_get_rtime();
 		interface_event(iface, IFEV_UP);
 		netifd_log_message(L_NOTICE, "Interface '%s' is now up\n", iface->name);
@@ -959,6 +961,7 @@ interface_set_l3_dev(struct interface *iface, struct device *dev)
 		interface_ip_set_enabled(&iface->config_ip, enabled);
 		interface_ip_set_enabled(&iface->proto_ip, enabled);
 	}
+	netifd_ubus_interface_ip_event(iface);
 }
 
 void
@@ -1263,6 +1266,7 @@ interface_change_config(struct interface *if_old, struct interface *if_new)
 		interface_ip_set_enabled(&if_old->proto_ip, false);
 		interface_ip_set_enabled(&if_old->proto_ip, proto_ip_enabled);
 		interface_ip_set_enabled(&if_old->config_ip, config_ip_enabled);
+		netifd_ubus_interface_ip_event(if_old);
 	}
 
 	interface_write_resolv_conf();
