@@ -47,6 +47,7 @@ netifd_handle_reload(struct ubus_context *ctx, struct ubus_object *obj,
 	if (netifd_reload())
 		return UBUS_STATUS_NOT_FOUND;
 
+	netifd_ubus_actiond_trigger_event();
 	return UBUS_STATUS_OK;
 }
 
@@ -1460,4 +1461,30 @@ netifd_ubus_remove_interface(struct interface *iface)
 
 	ubus_remove_object(ubus_ctx, &iface->ubus);
 	free((void *) iface->ubus.name);
+}
+
+static struct uloop_timeout trigger_timeout;
+
+static void
+netifd_trigger_cb(struct uloop_timeout *t)
+{
+	int ret;
+	static uint32_t ubus_id;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_string(&b, "type", "event");
+	blobmsg_add_string(&b, "val", "netifd");
+	ret = ubus_lookup_id(ubus_ctx, "actiond", &ubus_id);
+	if (ret == UBUS_STATUS_OK)
+		ubus_invoke(ubus_ctx, ubus_id, "trigger", b.head, NULL, NULL, 2000);
+}
+
+void
+netifd_ubus_actiond_trigger_event()
+{
+	if (!trigger_timeout.pending) {
+		/* Delay reload status to capture many events triggered close together */
+		trigger_timeout.cb = netifd_trigger_cb;
+		uloop_timeout_set(&trigger_timeout, 1000);
+	}
 }
