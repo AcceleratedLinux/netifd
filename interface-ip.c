@@ -495,6 +495,11 @@ interface_handle_subnet_route(struct interface *iface, struct device_addr *addr,
 	r->flags &= ~DEVROUTE_PROTO;
 	interface_set_route_info(iface, r);
 
+	if ((r->flags & DEVADDR_FAMILY) == DEVADDR_INET4) {
+		r->sourcemask = 32;
+		memcpy(&r->source, &addr->addr, sizeof(r->addr));
+	}
+
 	system_add_route(dev, r);
 }
 
