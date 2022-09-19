@@ -665,6 +665,7 @@ interface_cleanup(struct interface *iface)
 static void
 interface_do_free(struct interface *iface)
 {
+	interface_free_assignments(iface);
 	interface_event(iface, IFEV_FREE);
 	interface_cleanup(iface);
 	free(iface->config);
@@ -1286,6 +1287,7 @@ interface_update(struct vlist_tree *tree, struct vlist_node *node_new,
 		interface_event(if_new, IFEV_CREATE);
 		proto_init_interface(if_new, if_new->config);
 		interface_claim_device(if_new);
+		interface_refresh_assignments(true);
 		netifd_ubus_add_interface(if_new);
 	}
 }

@@ -905,20 +905,30 @@ static int prefix_assignment_cmp(const void *k1, const void *k2, void *ptr)
 	return strcmp(a1->name, a2->name);
 }
 
+static void interface_free_prefix_assignments(struct device_prefix *prefix, struct interface *match)
+{
+	struct device_prefix_assignment *c, *n;
+	struct interface *iface;
+
+	list_for_each_entry_safe(c, n, &prefix->assignments, head)
+	{
+		iface = vlist_find(&interfaces, c->name, iface, node);
+		if (match && iface != match)
+			continue;
+		if (iface)
+			interface_set_prefix_address(c, prefix, iface, false);
+		list_del(&c->head);
+		free(c);
+	}
+}
+
 static void interface_update_prefix_assignments(struct device_prefix *prefix, bool setup)
 {
 	struct device_prefix_assignment *c;
 	struct interface *iface;
 
 	// Delete all assignments
-	while (!list_empty(&prefix->assignments)) {
-		c = list_first_entry(&prefix->assignments,
-				struct device_prefix_assignment, head);
-		if ((iface = vlist_find(&interfaces, c->name, iface, node)))
-			interface_set_prefix_address(c, prefix, iface, false);
-		list_del(&c->head);
-		free(c);
-	}
+	interface_free_prefix_assignments(prefix, NULL);
 
 	if (!setup)
 		return;
@@ -1053,6 +1063,12 @@ void interface_refresh_assignments(bool hint)
 	refresh = hint;
 }
 
+void interface_free_assignments(struct interface *iface)
+{
+	struct device_prefix *p;
+	list_for_each_entry(p, &prefixes, head)
+		interface_free_prefix_assignments(p, iface);
+}
 
 static void
 interface_update_prefix(struct vlist_tree *tree,

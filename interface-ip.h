@@ -173,5 +173,6 @@ struct device_prefix* interface_ip_add_device_prefix(struct interface *iface,
 		struct in6_addr *excl_addr, uint8_t excl_length, const char *pclass);
 void interface_ip_set_ula_prefix(const char *prefix);
 void interface_refresh_assignments(bool hint);
+void interface_free_assignments(struct interface *iface);
 
 #endif
