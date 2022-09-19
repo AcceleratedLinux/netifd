@@ -23,6 +23,7 @@
 #include "interface-ip.h"
 #include "proto.h"
 #include "system.h"
+#include "ubus.h"
 
 struct static_proto_state {
 	struct interface_proto_state proto;
@@ -54,6 +55,7 @@ static_handler(struct interface_proto_state *proto,
 		if (!static_proto_setup(state))
 			return -1;
 
+		netifd_ubus_actiond_trigger_event();
 		break;
 	case PROTO_CMD_TEARDOWN:
 	case PROTO_CMD_RENEW:
