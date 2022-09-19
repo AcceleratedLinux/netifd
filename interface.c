@@ -352,6 +352,9 @@ __interface_set_up(struct interface *iface)
 {
 	int ret;
 
+	if (iface->main_dev.dev && !iface->main_dev.claimed)
+		return -1;
+
 	netifd_log_message(L_NOTICE, "Interface '%s' is setting up now\n", iface->name);
 
 	iface->state = IFS_SETUP;
