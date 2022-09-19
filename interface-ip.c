@@ -439,6 +439,9 @@ route_cmp(const void *k1, const void *k2, void *ptr)
 	if (r1->metric != r2->metric)
 		return r1->metric - r2->metric;
 
+	if (r1->mtu != r2->mtu)
+		return r1->mtu - r2->mtu;
+
 	if (r1->flags != r2->flags)
 		return r2->flags - r1->flags;
 
@@ -500,6 +503,10 @@ interface_handle_subnet_route(struct interface *iface, struct device_addr *addr,
 		memcpy(&r->source, &addr->addr, sizeof(r->addr));
 	}
 
+	if (iface->mtu != 0) {
+		r->mtu = iface->mtu;
+		r->flags |= DEVROUTE_MTU;
+	}
 	system_add_route(dev, r);
 }
 
@@ -606,7 +613,7 @@ interface_update_proto_addr(struct vlist_tree *tree,
 				if (system_add_address(dev, a_new))
 					a_new->failed = true;
 
-				if (iface->metric || a_new->policy_table)
+				if (iface->metric || (iface->mtu > 0) || a_new->policy_table)
 					interface_handle_subnet_route(iface, a_new, true);
 			}
 

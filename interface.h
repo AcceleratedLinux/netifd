@@ -148,6 +148,7 @@ struct interface {
 	struct vlist_tree host_routes;
 
 	int metric;
+	int mtu;
 	int dns_metric;
 	unsigned int ip4table;
 	unsigned int ip6table;
