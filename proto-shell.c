@@ -28,6 +28,7 @@
 #include "proto.h"
 #include "system.h"
 #include "handler.h"
+#include "ubus.h"
 
 static int proto_fd = -1;
 
@@ -583,6 +584,8 @@ proto_shell_update_link(struct proto_shell_state *state, struct blob_attr *data,
 		state->proto.proto_event(&state->proto, IFPEV_UP);
 		state->sm = S_IDLE;
 	}
+
+	netifd_ubus_actiond_trigger_event();
 
 	return 0;
 }
