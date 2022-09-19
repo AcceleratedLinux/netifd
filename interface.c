@@ -254,7 +254,6 @@ interface_flush_state(struct interface *iface)
 {
 	if (iface->l3_dev.dev)
 		device_release(&iface->l3_dev);
-	interface_data_flush(iface);
 }
 
 static void
@@ -639,6 +638,7 @@ interface_cleanup_state(struct interface *iface)
 	interface_set_available(iface, false);
 
 	interface_flush_state(iface);
+	interface_data_flush(iface);
 	interface_clear_errors(iface);
 	interface_set_proto_state(iface, NULL);
 
