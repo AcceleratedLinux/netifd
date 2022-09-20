@@ -164,7 +164,7 @@ proto_shell_handler(struct interface_proto_state *proto,
 	struct netifd_process *proc;
 	static char error_buf[32];
 	const char *argv[7];
-	char *envp[2];
+	char *envp[3];
 	const char *action;
 	char *config;
 	int ret, i = 0, j = 0;
@@ -238,6 +238,9 @@ proto_shell_handler(struct interface_proto_state *proto,
 	config = blobmsg_format_json(state->config, true);
 	if (!config)
 		return -1;
+
+	if (proto->iface->last_ev == IFEV_RELOAD)
+		envp[j++] = "EVENT=RELOAD";
 
 	argv[i++] = handler->script_name;
 	argv[i++] = handler->proto.name;

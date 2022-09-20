@@ -104,7 +104,7 @@ struct interface {
 	struct vlist_node node;
 	struct list_head hotplug_list;
 	enum interface_event hotplug_ev;
-
+	enum interface_event last_ev;
 	const char *name;
 	const char *ifname;
 
