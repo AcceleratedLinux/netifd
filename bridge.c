@@ -38,6 +38,7 @@ enum {
 	BRIDGE_ATTR_QUERY_INTERVAL,
 	BRIDGE_ATTR_QUERY_RESPONSE_INTERVAL,
 	BRIDGE_ATTR_LAST_MEMBER_INTERVAL,
+	BRIDGE_ATTR_VLAN_FILTERING,
 	__BRIDGE_ATTR_MAX
 };
 
@@ -57,6 +58,7 @@ static const struct blobmsg_policy bridge_attrs[__BRIDGE_ATTR_MAX] = {
 	[BRIDGE_ATTR_QUERY_INTERVAL] = { "query_interval", BLOBMSG_TYPE_INT32 },
 	[BRIDGE_ATTR_QUERY_RESPONSE_INTERVAL] = { "query_response_interval", BLOBMSG_TYPE_INT32 },
 	[BRIDGE_ATTR_LAST_MEMBER_INTERVAL] = { "last_member_interval", BLOBMSG_TYPE_INT32 },
+	[BRIDGE_ATTR_VLAN_FILTERING] = { "vlan_filtering", BLOBMSG_TYPE_BOOL },
 };
 
 static const struct uci_blob_param_info bridge_attr_info[__BRIDGE_ATTR_MAX] = {
@@ -567,6 +569,7 @@ bridge_apply_settings(struct bridge_state *bst, struct blob_attr **tb)
 
 	/* defaults */
 	cfg->stp = false;
+	cfg->vlan_filtering = false;
 	cfg->forward_delay = 2;
 	cfg->robustness = 2;
 	cfg->query_interval = 12500;
@@ -578,6 +581,9 @@ bridge_apply_settings(struct bridge_state *bst, struct blob_attr **tb)
 
 	if ((cur = tb[BRIDGE_ATTR_STP]))
 		cfg->stp = blobmsg_get_bool(cur);
+
+	if ((cur = tb[BRIDGE_ATTR_VLAN_FILTERING]))
+		cfg->vlan_filtering = blobmsg_get_bool(cur);
 
 	if ((cur = tb[BRIDGE_ATTR_FORWARD_DELAY]))
 		cfg->forward_delay = blobmsg_get_u32(cur);

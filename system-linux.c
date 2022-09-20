@@ -1067,6 +1067,9 @@ static void system_bridge_conf_multicast(struct device *bridge,
 	system_set_dev_sysctl("/sys/devices/virtual/net/%s/bridge/multicast_querier",
 		bridge->ifname, cfg->multicast_querier ? "1" : "0");
 
+	system_set_dev_sysctl("/sys/devices/virtual/net/%s/bridge/vlan_filtering",
+		bridge->ifname, cfg->vlan_filtering ? "1" : "0");
+
 	snprintf(buf, buf_len, "%i", cfg->hash_max);
 	system_set_dev_sysctl("/sys/devices/virtual/net/%s/bridge/hash_max",
 		bridge->ifname, buf);

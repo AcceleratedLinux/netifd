@@ -103,7 +103,7 @@ enum bridge_opt {
 struct bridge_config {
 	enum bridge_opt flags;
 	bool stp;
-
+	bool vlan_filtering;
 	bool igmp_snoop;
 	bool multicast_querier;
 	int robustness;
