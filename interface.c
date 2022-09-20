@@ -256,6 +256,8 @@ interface_event(struct interface *iface, enum interface_event ev)
 	struct interface_user *dep, *tmp;
 	struct device *adev = NULL;
 
+	iface->last_ev = ev;
+
 	list_for_each_entry_safe(dep, tmp, &iface->users, list)
 		dep->cb(dep, iface, ev);
 
