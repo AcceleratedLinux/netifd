@@ -1489,6 +1489,9 @@ interface_update(struct vlist_tree *tree, struct vlist_node *node_new,
 	struct interface *if_new = container_of(node_new, struct interface, node);
 
 	if (node_old && node_new) {
+		if (if_old->config_state == IFC_REMOVE) {
+			if_old->config_state = IFC_NORMAL;
+		}
 		D(INTERFACE, "Update interface '%s'\n", if_new->name);
 		interface_change_config(if_old, if_new);
 	} else if (node_old) {
