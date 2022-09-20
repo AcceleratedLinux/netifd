@@ -200,7 +200,7 @@ proto_shell_handler(struct interface_proto_state *proto,
 		switch (state->sm) {
 		case S_SETUP:
 			if (state->script_task.uloop.pending) {
-				uloop_timeout_set(&state->teardown_timeout, 1000);
+				uloop_timeout_set(&state->teardown_timeout, 30000);
 				kill(state->script_task.uloop.pid, SIGTERM);
 				if (state->proto_task.uloop.pending)
 					kill(state->proto_task.uloop.pid, SIGTERM);
@@ -218,7 +218,7 @@ proto_shell_handler(struct interface_proto_state *proto,
 				snprintf(error_buf, sizeof(error_buf), "ERROR=%d", state->last_error);
 				envp[j++] = error_buf;
 			}
-			uloop_timeout_set(&state->teardown_timeout, 5000);
+			uloop_timeout_set(&state->teardown_timeout, 30000);
 			break;
 
 		case S_TEARDOWN:
