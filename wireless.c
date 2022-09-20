@@ -32,7 +32,7 @@
 #include "handler.h"
 #include "ubus.h"
 
-#define WIRELESS_SETUP_RETRY	3
+#define WIRELESS_SETUP_RETRY	0
 
 struct vlist_tree wireless_devices;
 struct avl_tree wireless_drivers;
@@ -601,8 +601,8 @@ wireless_device_retry_setup(struct wireless_device *wdev)
 	if (wdev->state == IFS_TEARDOWN || wdev->state == IFS_DOWN || wdev->cancel)
 		return;
 
-	if (--wdev->retry < 0)
-		wdev->retry_setup_failed = true;
+	wdev->retry++;
+	netifd_log_message(L_NOTICE, "Retrying setup for wireless device '%s' (attempt %d)\n", wdev->name, wdev->retry);
 
 	__wireless_device_set_down(wdev);
 }
@@ -644,9 +644,10 @@ wdev_set_config_state(struct wireless_device *wdev, enum interface_config_state 
 		return;
 
 	wdev->config_state = s;
-	if (wdev->state == IFS_DOWN)
+	if (wdev->state == IFS_DOWN) {
+		wdev->retry = 0;
 		wdev_handle_config_change(wdev);
-	else if (!wdev->reconf || wdev->state != IFS_UP)
+	} else if (!wdev->reconf || wdev->state != IFS_UP)
 		__wireless_device_set_down(wdev);
 }
 
