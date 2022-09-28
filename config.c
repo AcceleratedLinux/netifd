@@ -155,6 +155,26 @@ config_parse_bridge_interface(struct uci_section *s, struct device_type *devtype
 	return 0;
 }
 
+static int
+config_parse_bond_interface(struct uci_section *s, struct device_type *devtype)
+{
+	char *name;
+
+	name = alloca(strlen(s->e.name) + strlen(devtype->name_prefix) + 2);
+	sprintf(name, "%s-%s", devtype->name_prefix, s->e.name);
+	blobmsg_add_string(&b, "name", name);
+
+	uci_to_blob(&b, s, devtype->config_params);
+	if (!device_create(name, devtype, b.head)) {
+		D(INTERFACE, "Failed to create '%s' device for interface '%s'\n",
+		  devtype->name, s->e.name);
+	}
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_string(&b, "ifname", name);
+	return 0;
+}
+
 static void
 config_parse_interface(struct uci_section *s, bool alias)
 {
@@ -176,7 +196,12 @@ config_parse_interface(struct uci_section *s, bool alias)
 	if (type)
 		devtype = device_type_get(type);
 
-	if (devtype && devtype->bridge_capability) {
+	if (devtype && !strcmp(devtype->name, "bond")) {
+		if (config_parse_bond_interface(s, devtype))
+			return;
+
+		bridge = true;
+	} else if (devtype && devtype->bridge_capability) {
 		if (config_parse_bridge_interface(s, devtype))
 			return;
 
