@@ -1413,6 +1413,15 @@ netifd_ubus_interface_state_event(struct interface *iface)
 }
 
 void
+netifd_ubus_interface_ip_event(struct interface *iface)
+{
+	blob_buf_init(&b, 0);
+	blobmsg_add_string(&b, "action", "ip");
+	blobmsg_add_string(&b, "interface", iface->name);
+	ubus_send_event(ubus_ctx, "network.interface", b.head);
+}
+
+void
 netifd_ubus_interface_notify(struct interface *iface, bool up)
 {
 	const char *event = (up) ? "interface.update" : "interface.down";
