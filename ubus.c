@@ -1243,6 +1243,30 @@ netifd_ubus_interface_event(struct interface *iface, bool up)
 }
 
 void
+netifd_ubus_interface_state_event(struct interface *iface)
+{
+	const char *state;
+	struct interface *real_iface;
+
+	/* make sure we have the real iface and not some bogus dynamic one */
+	real_iface = vlist_find(&interfaces, iface->name, real_iface, node);
+	if (real_iface)
+		iface = real_iface;
+
+	blob_buf_init(&b, 0);
+	switch (iface->state) {
+		case IFS_SETUP:    state = "setup";    break;
+		case IFS_UP:       state = "up";       break;
+		case IFS_TEARDOWN: state = "teardown"; break;
+		case IFS_DOWN:     state = "down";     break;
+		default:           state = "unknown";  break;
+	}
+	blobmsg_add_string(&b, "state", state);
+	blobmsg_add_string(&b, "interface", iface->name);
+	ubus_send_event(ubus_ctx, "network.interface", b.head);
+}
+
+void
 netifd_ubus_interface_notify(struct interface *iface, bool up)
 {
 	const char *event = (up) ? "interface.update" : "interface.down";
