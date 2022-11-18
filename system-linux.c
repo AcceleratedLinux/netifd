@@ -1446,6 +1446,42 @@ nla_put_failure:
 	return -ENOMEM;
 }
 
+int system_bridge_addbr(struct device *bridge, struct bridge_config *cfg)
+{
+	char buf[64];
+
+	if (ioctl(sock_ioctl, SIOCBRADDBR, bridge->ifname) < 0 && errno != EEXIST)
+		return -1;
+
+	system_bridge_set_stp_state(bridge, cfg->stp ? "1" : "0");
+
+	snprintf(buf, sizeof(buf), "%lu", sec_to_jiffies(cfg->forward_delay));
+	system_bridge_set_forward_delay(bridge, buf);
+
+	system_bridge_conf_multicast(bridge, cfg, buf, sizeof(buf));
+	system_bridge_set_vlan_filtering(bridge, cfg->vlan_filtering ? "1" : "0");
+
+	snprintf(buf, sizeof(buf), "%d", cfg->priority);
+	system_bridge_set_priority(bridge, buf);
+
+	if (cfg->flags & BRIDGE_OPT_AGEING_TIME) {
+		snprintf(buf, sizeof(buf), "%lu", sec_to_jiffies(cfg->ageing_time));
+		system_bridge_set_ageing_time(bridge, buf);
+	}
+
+	if (cfg->flags & BRIDGE_OPT_HELLO_TIME) {
+		snprintf(buf, sizeof(buf), "%lu", sec_to_jiffies(cfg->hello_time));
+		system_bridge_set_hello_time(bridge, buf);
+	}
+
+	if (cfg->flags & BRIDGE_OPT_MAX_AGE) {
+		snprintf(buf, sizeof(buf), "%lu", sec_to_jiffies(cfg->max_age));
+		system_bridge_set_max_age(bridge, buf);
+	}
+
+	return 0;
+}
+
 int system_macvlan_add(struct device *macvlan, struct device *dev, struct macvlan_config *cfg)
 {
 	struct nl_msg *msg;
