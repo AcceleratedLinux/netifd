@@ -478,6 +478,7 @@ enum {
 	NOTIFY_LINK_UP,
 	NOTIFY_IFNAME,
 	NOTIFY_ADDR_EXT,
+	NOTIFY_MTU,
 	NOTIFY_ROUTES,
 	NOTIFY_ROUTES6,
 	NOTIFY_TUNNEL,
@@ -502,6 +503,7 @@ static const struct blobmsg_policy notify_attr[__NOTIFY_LAST] = {
 	[NOTIFY_LINK_UP] = { .name = "link-up", .type = BLOBMSG_TYPE_BOOL },
 	[NOTIFY_IFNAME] = { .name = "ifname", .type = BLOBMSG_TYPE_STRING },
 	[NOTIFY_ADDR_EXT] = { .name = "address-external", .type = BLOBMSG_TYPE_BOOL },
+	[NOTIFY_MTU] = { .name = "mtu", .type = BLOBMSG_TYPE_INT32 },
 	[NOTIFY_ROUTES] = { .name = "routes", .type = BLOBMSG_TYPE_ARRAY },
 	[NOTIFY_ROUTES6] = { .name = "routes6", .type = BLOBMSG_TYPE_ARRAY },
 	[NOTIFY_TUNNEL] = { .name = "tunnel", .type = BLOBMSG_TYPE_TABLE },
@@ -541,6 +543,9 @@ proto_shell_update_link(struct proto_shell_state *state, struct blob_attr *data,
 
 	if ((cur = tb[NOTIFY_KEEP]) != NULL)
 		keep = blobmsg_get_bool(cur);
+
+	if ((cur = tb[NOTIFY_MTU]) != NULL)
+		state->proto.iface->mtu = blobmsg_get_u32(cur);
 
 	if ((cur = tb[NOTIFY_ADDR_EXT]) != NULL) {
 		addr_ext = blobmsg_get_bool(cur);

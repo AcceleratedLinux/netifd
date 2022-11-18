@@ -56,6 +56,7 @@ proto_init_update() {
 
 	PROTO_KEEP=0
 	PROTO_INIT=1
+	PROTO_MTU=
 	PROTO_TUNNEL_OPEN=
 	PROTO_IPADDR=
 	PROTO_IP6ADDR=
@@ -123,13 +124,19 @@ proto_add_dns_search() {
 	append PROTO_DNS_SEARCH "$address"
 }
 
+proto_add_mtu() {
+	local mtu="$1"
+	append PROTO_MTU "$mtu"
+}
+
 proto_add_ipv4_address() {
 	local address="$1"
 	local mask="$2"
 	local broadcast="$3"
 	local ptp="$4"
+	local mtu="$5"
 
-	append PROTO_IPADDR "$address/$mask/$broadcast/$ptp"
+	append PROTO_IPADDR "$address/$mask/$broadcast/$ptp/$mtu"
 }
 
 proto_add_ipv6_address() {
@@ -166,8 +173,9 @@ proto_add_ipv4_route() {
 	local gw="$3"
 	local source="$4"
 	local metric="$5"
+	local mtu="$6"
 
-	append PROTO_ROUTE "$target/$mask/$gw/$metric///$source"
+	append PROTO_ROUTE "$target/$mask/$gw/$metric///$mtu/$source"
 }
 
 proto_add_ipv6_route() {
@@ -178,8 +186,9 @@ proto_add_ipv6_route() {
 	local valid="$5"
 	local source="$6"
 	local table="$7"
+	local mtu="$8"
 
-	append PROTO_ROUTE6 "$target/$mask/$gw/$metric/$valid/$table/$source"
+	append PROTO_ROUTE6 "$target/$mask/$gw/$metric/$valid/$table/$mtu/$source"
 }
 
 proto_add_ipv6_prefix() {
@@ -197,7 +206,7 @@ proto_add_ipv6_prefix() {
 
 _proto_push_ipv4_addr() {
 	local str="$1"
-	local address mask broadcast ptp
+	local address mask broadcast ptp mtu
 
 	address="${str%%/*}"
 	str="${str#*/}"
@@ -205,13 +214,16 @@ _proto_push_ipv4_addr() {
 	str="${str#*/}"
 	broadcast="${str%%/*}"
 	str="${str#*/}"
-	ptp="$str"
+	ptp="${str%%/*}"
+	str="${str#*/}"
+	mtu="$str"
 
 	json_add_object ""
 	json_add_string ipaddr "$address"
 	[ -n "$mask" ] && json_add_string mask "$mask"
 	[ -n "$broadcast" ] && json_add_string broadcast "$broadcast"
 	[ -n "$ptp" ] && json_add_string ptp "$ptp"
+	[ -n "$mtu" ] && json_add_int mtu "$mtu"
 	json_close_object
 }
 
@@ -296,7 +308,9 @@ _proto_push_route() {
 	str="${str#*/}"
 	local table="${str%%/*}"
 	str="${str#*/}"
-	local source="${str}"
+	local mtu="${str%%/*}"
+	str="${str#*/}"
+	local source="$str"
 
 	json_add_object ""
 	json_add_string target "$target"
@@ -306,6 +320,7 @@ _proto_push_route() {
 	[ -n "$valid" ] && json_add_int valid "$valid"
 	[ -n "$source" ] && json_add_string source "$source"
 	[ -n "$table" ] && json_add_string table "$table"
+	[ -n "$mtu" ] && json_add_int mtu "$mtu"
 	json_close_object
 }
 
@@ -334,6 +349,7 @@ proto_send_update() {
 
 	proto_close_nested
 	json_add_boolean keep "$PROTO_KEEP"
+	json_add_int mtu "$PROTO_MTU"
 	_proto_push_array "ipaddr" "$PROTO_IPADDR" _proto_push_ipv4_addr
 	_proto_push_array "ip6addr" "$PROTO_IP6ADDR" _proto_push_ipv6_addr
 	_proto_push_array "routes" "$PROTO_ROUTE" _proto_push_route
