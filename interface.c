@@ -353,6 +353,7 @@ interface_check_state(struct interface *iface)
 				__set_config_state(iface, IFC_REMOVE);
 
 			interface_proto_event(iface->proto, PROTO_CMD_TEARDOWN, false);
+			netifd_ubus_interface_state_event(iface);
 		}
 		break;
 	case IFS_DOWN:
