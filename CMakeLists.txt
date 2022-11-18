@@ -7,7 +7,6 @@ IF(NOT ${CMAKE_VERSION} LESS 3.0)
   check_c_compiler_flag(-Wimplicit-fallthrough HAS_IMPLICIT_FALLTHROUGH)
 ENDIF()
 
-ADD_DEFINITIONS(-Wall -Werror)
 IF(CMAKE_C_COMPILER_VERSION VERSION_GREATER 6)
 	add_definitions(-Wextra -Werror=implicit-function-declaration)
 	add_definitions(-Wformat -Werror=format-security -Werror=format-nonliteral)
