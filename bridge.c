@@ -360,8 +360,9 @@ bridge_enable_member(struct bridge_member *bm)
 	struct device *dev;
 	int ret;
 
-	if (!bm->present)
-		return 0;
+	/* as we only add devices to the uci file that are enabled,
+		ignore the present indicator. */
+	bm->present = true;
 
 	ret = bridge_enable_interface(bst);
 	if (ret)
@@ -526,7 +527,8 @@ bridge_member_cb(struct device_user *dep, enum device_event ev)
 
 	switch (ev) {
 	case DEV_EVENT_ADD:
-		assert(!bm->present);
+		if (bm->present)
+			return;
 
 		bm->present = true;
 		bst->n_present++;
@@ -661,8 +663,10 @@ bridge_create_member(struct bridge_state *bst, const char *name,
 	 * already existed
 	 */
 	bm = vlist_find(&bst->members, name, bm, node);
-	if (hotplug && bm)
+	if (hotplug && bm) {
 		bm->node.version = -1;
+		bm->present = true;
+	}
 
 	return bm;
 }
