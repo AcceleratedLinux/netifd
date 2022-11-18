@@ -3283,7 +3283,7 @@ static int system_rt(struct device *dev, struct device_route *route, int cmd)
 	struct nl_msg *msg;
 
 	if (cmd == RTM_NEWROUTE) {
-		flags |= NLM_F_CREATE | NLM_F_REPLACE;
+		flags |= NLM_F_CREATE;
 
 		if (!dev) { /* Add null-route */
 			rtm.rtm_scope = RT_SCOPE_UNIVERSE;
