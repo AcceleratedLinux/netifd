@@ -1152,7 +1152,7 @@ int system_bridge_addbr(struct device *bridge, struct bridge_config *cfg)
 {
 	char buf[64];
 
-	if (ioctl(sock_ioctl, SIOCBRADDBR, bridge->ifname) < 0)
+	if (ioctl(sock_ioctl, SIOCBRADDBR, bridge->ifname) < 0 && errno != EEXIST)
 		return -1;
 
 	system_bridge_set_stp_state(bridge, cfg->stp ? "1" : "0");
