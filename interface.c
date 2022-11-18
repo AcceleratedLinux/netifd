@@ -37,6 +37,7 @@ enum {
 	IFACE_ATTR_DNS_SEARCH,
 	IFACE_ATTR_DNS_METRIC,
 	IFACE_ATTR_METRIC,
+	IFACE_ATTR_MTU,
 	IFACE_ATTR_INTERFACE,
 	IFACE_ATTR_IP6ASSIGN,
 	IFACE_ATTR_IP6HINT,
@@ -57,6 +58,7 @@ static const struct blobmsg_policy iface_attrs[IFACE_ATTR_MAX] = {
 	[IFACE_ATTR_DEFAULTROUTE] = { .name = "defaultroute", .type = BLOBMSG_TYPE_BOOL },
 	[IFACE_ATTR_PEERDNS] = { .name = "peerdns", .type = BLOBMSG_TYPE_BOOL },
 	[IFACE_ATTR_METRIC] = { .name = "metric", .type = BLOBMSG_TYPE_INT32 },
+	[IFACE_ATTR_MTU] = { .name = "mtu", .type = BLOBMSG_TYPE_INT32 },
 	[IFACE_ATTR_DNS] = { .name = "dns", .type = BLOBMSG_TYPE_ARRAY },
 	[IFACE_ATTR_DNS_SEARCH] = { .name = "dns_search", .type = BLOBMSG_TYPE_ARRAY },
 	[IFACE_ATTR_DNS_METRIC] = { .name = "dns_metric", .type = BLOBMSG_TYPE_INT32 },
@@ -850,6 +852,9 @@ interface_alloc(const char *name, struct blob_attr *config, bool dynamic)
 	if ((cur = tb[IFACE_ATTR_METRIC]))
 		iface->metric = blobmsg_get_u32(cur);
 
+	if ((cur = tb[IFACE_ATTR_MTU]))
+		iface->mtu = blobmsg_get_u32(cur);
+
 	if ((cur = tb[IFACE_ATTR_IP6ASSIGN]))
 		iface->assignment_length = blobmsg_get_u32(cur);
 
@@ -1174,6 +1179,7 @@ interface_update_start(struct interface *iface, const bool keep_old)
 void
 interface_update_complete(struct interface *iface)
 {
+	iface->proto_ip.iface->mtu = iface->mtu;
 	interface_ip_update_complete(&iface->proto_ip);
 }
 
@@ -1276,6 +1282,7 @@ interface_change_config(struct interface *if_old, struct interface *if_new)
 	interface_replace_dns(&if_old->config_ip, &if_new->config_ip);
 
 	UPDATE(metric, reload_ip);
+	UPDATE(mtu, reload_ip);
 	UPDATE(proto_ip.no_defaultroute, reload_ip);
 	UPDATE(ip4table, reload_ip);
 	UPDATE(ip6table, reload_ip);

@@ -115,11 +115,13 @@ netifd_get_proto_handlers(struct ubus_context *ctx, struct ubus_object *obj,
 
 enum {
 	DI_NAME,
+	DI_MTU,
 	__DI_MAX
 };
 
 static const struct blobmsg_policy dynamic_policy[__DI_MAX] = {
 	[DI_NAME] = { .name = "name", .type = BLOBMSG_TYPE_STRING },
+	[DI_MTU] = { .name = "mtu", .type = BLOBMSG_TYPE_INT32 },
 };
 
 static int
@@ -753,6 +755,7 @@ netifd_dump_status(struct interface *iface)
 		if (iface->ip6table)
 			blobmsg_add_u32(&b, "ip6table", iface->ip6table);
 		blobmsg_add_u32(&b, "metric", iface->metric);
+		blobmsg_add_u32(&b, "mtu", iface->mtu);
 		blobmsg_add_u32(&b, "dns_metric", iface->dns_metric);
 		blobmsg_add_u8(&b, "delegation", !iface->proto_ip.no_delegation);
 		if (iface->assignment_weight)
