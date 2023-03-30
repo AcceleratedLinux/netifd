@@ -42,6 +42,8 @@ enum {
 	DEV_ATTR_IGMPVERSION,
 	DEV_ATTR_MLDVERSION,
 	DEV_ATTR_NEIGHREACHABLETIME,
+	DEV_ATTR_RPS,
+	DEV_ATTR_XPS,
 	DEV_ATTR_DADTRANSMITS,
 	DEV_ATTR_MULTICAST_TO_UNICAST,
 	DEV_ATTR_MULTICAST_ROUTER,
@@ -126,6 +128,8 @@ enum {
 	DEV_OPT_ARP_ACCEPT		= (1ULL << 29),
 	DEV_OPT_SPEED			= (1ULL << 30),
 	DEV_OPT_DUPLEX			= (1ULL << 31),
+	DEV_OPT_RPS			= (1ULL << 32),
+	DEV_OPT_XPS			= (1ULL << 33),
 };
 
 /* events broadcasted to all users of a device */
@@ -185,6 +189,8 @@ struct device_settings {
 	unsigned int neigh4gcstaletime;
 	unsigned int neigh6gcstaletime;
 	int neigh4locktime;
+	bool rps;
+	bool xps;
 	unsigned int dadtransmits;
 	bool multicast_to_unicast;
 	unsigned int multicast_router;
@@ -317,6 +323,7 @@ device_apply_config(struct device *dev, struct device_type *type,
 
 void device_reset_config(void);
 void device_reset_old(void);
+void device_set_default_ps(bool state);
 
 int device_init_virtual(struct device *dev, struct device_type *type, const char *name);
 int device_init(struct device *dev, struct device_type *type, const char *ifname);
