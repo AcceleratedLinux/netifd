@@ -647,7 +647,7 @@ bond_add_member(struct bond_state *bst, const char *name)
 }
 
 static int
-bond_hotplug_add(struct device *dev, struct device *member)
+bond_hotplug_add(struct device *dev, struct device *member, struct blob_attr *vlan)
 {
 	struct bond_state *bst = container_of(dev, struct bond_state, dev);
 
@@ -657,7 +657,7 @@ bond_hotplug_add(struct device *dev, struct device *member)
 }
 
 static int
-bond_hotplug_del(struct device *dev, struct device *member)
+bond_hotplug_del(struct device *dev, struct device *member, struct blob_attr *vlan)
 {
 	struct bond_state *bst = container_of(dev, struct bond_state, dev);
 	struct bond_member *bm;
@@ -671,9 +671,12 @@ bond_hotplug_del(struct device *dev, struct device *member)
 }
 
 static int
-bond_hotplug_prepare(struct device *dev)
+bond_hotplug_prepare(struct device *dev, struct device **bridge_dev)
 {
 	struct bond_state *bst;
+
+	if (bridge_dev)
+		*bridge_dev = dev;
 
 	bst = container_of(dev, struct bond_state, dev);
 	bst->force_active = true;
