@@ -1727,6 +1727,29 @@ static bool ethtool_link_mode_test_bit(__s8 nwords, int nr, const __u32 *mask)
 }
 
 static void
+system_set_ethtool_gro(struct device *dev, struct device_settings *s)
+{
+	struct ethtool_value ecmd;
+	struct ifreq ifr = {
+		.ifr_data = (caddr_t)&ecmd,
+	};
+
+	strncpy(ifr.ifr_name, dev->ifname, IFNAMSIZ);
+	memset(&ecmd, 0, sizeof(ecmd));
+	ecmd.cmd = ETHTOOL_GGRO;
+	if (ioctl(sock_ioctl, SIOCETHTOOL, &ifr))
+		return;
+
+	if (s->flags & DEV_OPT_GRO)
+		ecmd.data = s->gro;
+	else /* set GRO ON by default */
+		ecmd.data = true;
+
+	ecmd.cmd = ETHTOOL_SGRO;
+	ioctl(sock_ioctl, SIOCETHTOOL, &ifr);
+}
+
+static void
 system_set_ethtool_pause(struct device *dev, struct device_settings *s)
 {
 	struct ethtool_pauseparam pp;
@@ -1848,6 +1871,12 @@ system_set_ethtool_settings(struct device *dev, struct device_settings *s)
 
 	ecmd.req.cmd = ETHTOOL_SLINKSETTINGS;
 	ioctl(sock_ioctl, SIOCETHTOOL, &ifr);
+}
+
+static void
+system_set_ethtool_settings_after_up(struct device *dev, struct device_settings *s)
+{
+	system_set_ethtool_gro(dev, s);
 }
 
 void
@@ -2074,6 +2103,11 @@ system_if_apply_settings(struct device *dev, struct device_settings *s, uint64_t
 	if (apply_mask & DEV_OPT_ARP_ACCEPT)
 		system_set_arp_accept(dev, s->arp_accept ? "1" : "0");
 	system_set_ethtool_settings(dev, s);
+}
+
+void system_if_apply_settings_after_up(struct device *dev, struct device_settings *s)
+{
+	system_set_ethtool_settings_after_up(dev, s);
 }
 
 int system_if_up(struct device *dev)

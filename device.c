@@ -69,6 +69,7 @@ static const struct blobmsg_policy dev_attrs[__DEV_ATTR_MAX] = {
 	[DEV_ATTR_RXPAUSE] = { .name = "rxpause", .type = BLOBMSG_TYPE_BOOL },
 	[DEV_ATTR_TXPAUSE] = { .name = "txpause", .type = BLOBMSG_TYPE_BOOL },
 	[DEV_ATTR_AUTONEG] = { .name = "autoneg", .type = BLOBMSG_TYPE_BOOL },
+	[DEV_ATTR_GRO] = { .name = "gro", .type = BLOBMSG_TYPE_BOOL },
 };
 
 const struct uci_blob_param_list device_attr_list = {
@@ -161,6 +162,8 @@ static int set_device_state(struct device *dev, bool state)
 		system_if_apply_settings(dev, &dev->settings, dev->settings.flags);
 
 		system_if_up(dev);
+
+		system_if_apply_settings_after_up(dev, &dev->settings);
 	} else {
 		system_if_down(dev);
 		system_if_apply_settings(dev, &dev->orig_settings, dev->orig_settings.flags);
@@ -291,6 +294,7 @@ device_merge_settings(struct device *dev, struct device_settings *n)
 	n->rxpause = s->flags & DEV_OPT_RXPAUSE ? s->rxpause : os->rxpause;
 	n->txpause = s->flags & DEV_OPT_TXPAUSE ? s->txpause : os->txpause;
 	n->autoneg = s->flags & DEV_OPT_AUTONEG ? s->autoneg : os->autoneg;
+	n->gro = s->flags & DEV_OPT_GRO ? s->gro : os->gro;
 	n->flags = s->flags | os->flags | os->valid_flags;
 }
 
@@ -539,6 +543,11 @@ device_init_settings(struct device *dev, struct blob_attr **tb)
 	if ((cur = tb[DEV_ATTR_AUTONEG])) {
 		s->autoneg = blobmsg_get_bool(cur);
 		s->flags |= DEV_OPT_AUTONEG;
+	}
+
+	if ((cur = tb[DEV_ATTR_GRO])) {
+		s->gro = blobmsg_get_bool(cur);
+		s->flags |= DEV_OPT_GRO;
 	}
 	device_set_extra_vlans(dev, tb[DEV_ATTR_VLAN]);
 	device_set_disabled(dev, disabled);
@@ -1305,6 +1314,8 @@ device_dump_status(struct blob_buf *b, struct device *dev)
 			blobmsg_add_u8(b, "arp_accept", st.arp_accept);
 		if (st.flags & DEV_OPT_AUTH)
 			blobmsg_add_u8(b, "auth", st.auth);
+		if (st.flags & DEV_OPT_GRO)
+			blobmsg_add_u8(b, "gro", st.gro);
 	}
 
 	s = blobmsg_open_table(b, "statistics");
