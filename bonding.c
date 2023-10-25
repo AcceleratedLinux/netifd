@@ -446,7 +446,6 @@ bonding_reload(struct device *dev, struct blob_attr *attr)
 	struct bonding_device *bdev;
 
 	BUILD_BUG_ON(sizeof(diff) < __BOND_ATTR_MAX / 8);
-	BUILD_BUG_ON(sizeof(diff) < __DEV_ATTR_MAX / 8);
 
 	bdev = container_of(dev, struct bonding_device, dev);
 	attr = blob_memdup(attr);
@@ -472,9 +471,7 @@ bonding_reload(struct device *dev, struct blob_attr *attr)
 		blobmsg_parse(device_attr_list.params, __DEV_ATTR_MAX, otb_dev,
 			blob_data(bdev->config_data), blob_len(bdev->config_data));
 
-		diff = 0;
-		uci_blob_diff(tb_dev, otb_dev, &device_attr_list, &diff);
-		if (diff)
+		if (uci_blob_diff(tb_dev, otb_dev, &device_attr_list, NULL))
 		    ret = DEV_CONFIG_RESTART;
 
 		blobmsg_parse(bonding_attrs, __BOND_ATTR_MAX, otb_b,
