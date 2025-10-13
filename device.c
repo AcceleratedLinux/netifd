@@ -191,11 +191,21 @@ simple_device_set_state(struct device *dev, bool state)
 	struct device *pdev;
 	int ret = 0;
 
+	D(DEVICE, "simple_device_set_state: %s '%s', state=%d, external=%d\n",
+		dev->type->name, dev->ifname, state, dev->external);
+
 	pdev = dev->parent.dev;
-	if (state && !pdev) {
+	if (state && !pdev && !dev->external) {
+		D(DEVICE, "Looking up parent device for '%s'\n", dev->ifname);
 		pdev = system_if_get_parent(dev);
-		if (pdev)
+		if (pdev) {
+			D(DEVICE, "Found parent device '%s' for '%s'\n", pdev->ifname, dev->ifname);
 			device_add_user(&dev->parent, pdev);
+		} else {
+			D(DEVICE, "No parent device found for '%s'\n", dev->ifname);
+		}
+	} else if (state && !pdev && dev->external) {
+		D(DEVICE, "Skipping parent lookup for external device '%s'\n", dev->ifname);
 	}
 
 	if (pdev) {
@@ -823,13 +833,14 @@ device_create_default(const char *name, bool external)
 	if (!external && system_if_force_external(name))
 		return NULL;
 
-	D(DEVICE, "Create simple device '%s'\n", name);
+	D(DEVICE, "Create simple device '%s', external=%d\n", name, external);
 	dev = calloc(1, sizeof(*dev));
 	if (!dev)
 		return NULL;
 
 	dev->external = external;
 	dev->set_state = simple_device_set_state;
+	D(DEVICE, "Device '%s' created with external flag=%d\n", name, dev->external);
 
 	if (device_init(dev, &simple_device_type, name) < 0) {
 		device_cleanup(dev);
