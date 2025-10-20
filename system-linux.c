@@ -709,8 +709,9 @@ static int cb_rtnl_event(struct nl_msg *msg, void *arg)
 	struct ifinfomsg *ifi = NLMSG_DATA(nh);
 	struct nlattr *nla[__IFLA_MAX];
 	struct device *dev;
+	unsigned int flags;
 
-	if (nh->nlmsg_type != RTM_NEWLINK)
+	if (nh->nlmsg_type != RTM_NEWLINK && nh->nlmsg_type != RTM_DELLINK)
 		return 0;
 
 	nlmsg_parse(nh, sizeof(struct ifinfomsg), nla, __IFLA_MAX - 1, NULL);
@@ -721,7 +722,8 @@ static int cb_rtnl_event(struct nl_msg *msg, void *arg)
 	if (!dev)
 		return 0;
 
-	system_device_update_state(dev, ifi->ifi_flags, ifi->ifi_index);
+	flags = (nh->nlmsg_type == RTM_DELLINK) ? 0 : ifi->ifi_flags;
+	system_device_update_state(dev, flags, ifi->ifi_index);
 	return 0;
 }
 
