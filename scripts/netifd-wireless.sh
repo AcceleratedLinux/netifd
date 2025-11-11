@@ -263,21 +263,9 @@ wireless_vif_parse_encryption() {
 		owe*)
 			auth_type=owe
 		;;
-		*psk)
-			auth_type=psk
-		;;
-		*psk2)
-			auth_type=psk
-		;;
-		*sae*)
-			auth_type=sae
-		;;
-		*wpa3*)
-			auth_type=eap192
-			wpa_pairwise="GCMP-256"
-		;;
 		wpa3-192*)
 			auth_type=eap192
+			wpa_pairwise="GCMP-256"
 		;;
 		wpa3-mixed*)
 			auth_type=eap-eap2
