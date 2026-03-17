@@ -726,7 +726,13 @@ static int cb_rtnl_event(struct nl_msg *msg, void *arg)
 		return 0;
 
 	flags = (nh->nlmsg_type == RTM_DELLINK) ? 0 : ifi->ifi_flags;
-	system_device_update_state(dev, flags, ifi->ifi_index);
+	/* Pass ifindex=0 on RTM_DELLINK so device_set_present() marks the
+	 * device as gone. The upstream code achieves this by calling
+	 * system_if_resolve() which returns 0 once the device is deleted;
+	 * our DAL version takes ifindex as a parameter so we must zero it
+	 * explicitly here. */
+	system_device_update_state(dev, flags,
+		(nh->nlmsg_type == RTM_DELLINK) ? 0 : ifi->ifi_index);
 	return 0;
 }
 
