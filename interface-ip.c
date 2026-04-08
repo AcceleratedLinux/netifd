@@ -562,6 +562,18 @@ route_cmp(const void *k1, const void *k2, void *ptr)
 {
 	const struct device_route *r1 = k1, *r2 = k2;
 
+	/*
+	 * Install directly connected routes before nexthop routes.
+	 * Nexthop routes may depend on an on-link subnet route from the same
+	 * update batch being present first.
+	 */
+	if (r1->nexthop.in.s_addr != r2->nexthop.in.s_addr) {
+		if (r1->nexthop.in.s_addr == INADDR_ANY)
+			return -1;
+		if (r2->nexthop.in.s_addr == INADDR_ANY)
+			return 1;
+	}
+
 	if (r1->mask != r2->mask)
 		return r2->mask - r1->mask;
 
