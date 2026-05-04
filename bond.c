@@ -65,7 +65,7 @@ static struct device *bond_create(const char *name, struct device_type *devtype,
 static void bond_config_init(struct device *dev);
 static void bond_free(struct device *dev);
 static void bond_dump_info(struct device *dev, struct blob_buf *b);
-enum dev_change_type
+static enum dev_change_type
 bond_reload(struct device *dev, struct blob_attr *attr);
 
 static struct device_type bond_device_type = {
@@ -782,13 +782,13 @@ bond_apply_settings(struct bond_state *bst, struct blob_attr **tb)
 		cfg->link_poll_interval = blobmsg_get_u32(cur);
 }
 
-enum dev_change_type
+static enum dev_change_type
 bond_reload(struct device *dev, struct blob_attr *attr)
 {
 	struct blob_attr *tb_dev[__DEV_ATTR_MAX];
 	struct blob_attr *tb_br[__BOND_ATTR_MAX];
 	enum dev_change_type ret = DEV_CONFIG_APPLIED;
-	unsigned long diff;
+	unsigned long diff[2] = {};
 	struct bond_state *bst;
 
 	BUILD_BUG_ON(sizeof(diff) < __BOND_ATTR_MAX / 8);
@@ -816,17 +816,17 @@ bond_reload(struct device *dev, struct blob_attr *attr)
 		blobmsg_parse(device_attr_list.params, __DEV_ATTR_MAX, otb_dev,
 					  blob_data(bst->config_data), blob_len(bst->config_data));
 
-		diff = 0;
-		uci_blob_diff(tb_dev, otb_dev, &device_attr_list, &diff);
-		if (diff)
+		diff[0] = diff[1] = 0;
+		uci_blob_diff(tb_dev, otb_dev, &device_attr_list, diff);
+		if (diff[0] | diff[1])
 			ret = DEV_CONFIG_RESTART;
 
 		blobmsg_parse(bond_attrs, __BOND_ATTR_MAX, otb_br,
 					  blob_data(bst->config_data), blob_len(bst->config_data));
 
-		diff = 0;
-		uci_blob_diff(tb_br, otb_br, &bond_attr_list, &diff);
-		if (diff & ~(1 << BOND_ATTR_IFNAME))
+		diff[0] = diff[1] = 0;
+		uci_blob_diff(tb_br, otb_br, &bond_attr_list, diff);
+		if (diff[0] & ~(1 << BOND_ATTR_IFNAME))
 			ret = DEV_CONFIG_RESTART;
 
 		bond_config_init(dev);
@@ -869,7 +869,13 @@ bond_create(const char *name, struct device_type *devtype,
 		return NULL;
 
 	dev = &bst->dev;
-	device_init(dev, devtype, name);
+
+	if (device_init(dev, devtype, name) < 0) {
+		device_cleanup(dev);
+		free(bst);
+		return NULL;
+	}
+
 	dev->config_pending = true;
 	bst->retry.cb = bond_retry_members;
 
