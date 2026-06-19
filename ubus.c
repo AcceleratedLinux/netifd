@@ -821,7 +821,9 @@ netifd_dump_status(struct interface *iface)
 {
 	struct interface_data *data;
 	struct device *dev;
+	struct device_settings st;
 	void *a, *inactive;
+	unsigned int rep_mtu;
 
 	blobmsg_add_u8(&b, "up", iface->state == IFS_UP);
 	blobmsg_add_u8(&b, "pending", iface->state == IFS_SETUP);
@@ -871,7 +873,21 @@ netifd_dump_status(struct interface *iface)
 		if (iface->ip6table)
 			blobmsg_add_u32(&b, "ip6table", iface->ip6table);
 		blobmsg_add_u32(&b, "metric", iface->metric);
-		blobmsg_add_u32(&b, "mtu", iface->mtu);
+		/*
+		 * For no_device protos (e.g. modemd) netifd does not manage the
+		 * device and never sets a config MTU, so the interface MTU would be
+		 * reported as 0 even though the device has a valid MTU — leaving
+		 * firewalld/runt/show-modem blank.  For these interfaces only, report
+		 * the L3 device's effective MTU (via device_merge_settings(), as the
+		 * device status dump does).  Managed interfaces are unaffected.
+		 */
+		rep_mtu = iface->mtu;
+		if (!rep_mtu && (iface->proto_handler->flags & PROTO_FLAG_NODEV) &&
+		    iface->l3_dev.dev) {
+			device_merge_settings(iface->l3_dev.dev, &st);
+			rep_mtu = st.mtu;
+		}
+		blobmsg_add_u32(&b, "mtu", rep_mtu);
 		blobmsg_add_u32(&b, "dns_metric", iface->dns_metric);
 		blobmsg_add_u8(&b, "delegation", !iface->proto_ip.no_delegation);
 		if (iface->assignment_weight)
