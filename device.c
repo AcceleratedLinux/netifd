@@ -1158,6 +1158,15 @@ device_init_pending(void)
 	}
 }
 
+void
+device_recheck_all(void)
+{
+	struct device *dev, *tmp;
+
+	avl_for_each_element_safe(&devices, dev, avl, tmp)
+		device_check_state(dev);
+}
+
 bool
 device_check_ip6segmentrouting(void)
 {

@@ -165,6 +165,38 @@ static const struct netdev_type netdev_types[] = {
 	{ARPHRD_NONE, "none"}
 };
 
+#define EVENT_SOCK_BUFSIZE_MAX	(16 * 1024 * 1024)
+
+static void
+link_resync_cb(struct uloop_timeout *t)
+{
+	device_recheck_all();
+}
+
+static struct uloop_timeout link_resync_timer = { .cb = link_resync_cb };
+
+static void
+event_socket_resync(void)
+{
+	if (link_resync_timer.pending)
+		return;
+
+	uloop_timeout_set(&link_resync_timer, 1000);
+}
+
+static bool
+event_socket_grow(struct event_socket *ev)
+{
+	if (ev->bufsize >= EVENT_SOCK_BUFSIZE_MAX)
+		return true;
+
+	ev->bufsize *= 2;
+	if (ev->bufsize > EVENT_SOCK_BUFSIZE_MAX)
+		ev->bufsize = EVENT_SOCK_BUFSIZE_MAX;
+
+	return !nl_socket_set_buffer_size(ev->sock, ev->bufsize, 0);
+}
+
 static void
 handler_nl_event(struct uloop_fd *u, unsigned int events)
 {
@@ -176,25 +208,26 @@ handler_nl_event(struct uloop_fd *u, unsigned int events)
 		return;
 
 	switch (-ret) {
-	case NLE_NOMEM:
-		/* Increase rx buffer size on netlink socket */
-		ev->bufsize *= 2;
-		if (nl_socket_set_buffer_size(ev->sock, ev->bufsize, 0))
-			goto abort;
+	case NLE_AGAIN:
+		return;
 
-		/* Request full dump since some info got dropped */
-		struct rtgenmsg msg = { .rtgen_family = AF_UNSPEC };
-		nl_send_simple(ev->sock, RTM_GETLINK, NLM_F_DUMP, &msg, sizeof(msg));
+	case NLE_NOMEM:
+		if (!event_socket_grow(ev))
+			netifd_log_message(L_WARNING, "netlink: failed to grow "
+					   "link event buffer past %d bytes\n",
+					   ev->bufsize);
+		break;
+
+	case NLE_DUMP_INTR:
 		break;
 
 	default:
-		goto abort;
+		netifd_log_message(L_WARNING,
+				   "netlink: link event socket error %d\n", -ret);
+		break;
 	}
-	return;
 
-abort:
-	uloop_fd_delete(&ev->uloop);
-	return;
+	event_socket_resync();
 }
 
 static struct nl_sock *
@@ -801,23 +834,24 @@ handle_hotplug_event(struct uloop_fd *u, unsigned int events)
 
 	switch (-size) {
 	case 0:
+	case NLE_AGAIN:
 		return;
 
 	case NLE_NOMEM:
-		/* Increase rx buffer size on netlink socket */
-		ev->bufsize *= 2;
-		if (nl_socket_set_buffer_size(ev->sock, ev->bufsize, 0))
-			goto abort;
+		if (!event_socket_grow(ev))
+			netifd_log_message(L_WARNING, "netlink: failed to grow "
+					   "hotplug event buffer past %d bytes\n",
+					   ev->bufsize);
 		break;
 
 	default:
-		goto abort;
+		netifd_log_message(L_WARNING,
+				   "netlink: hotplug event socket error %d\n",
+				   -size);
+		break;
 	}
-	return;
 
-abort:
-	uloop_fd_delete(&ev->uloop);
-	return;
+	event_socket_resync();
 }
 
 static int system_rtnl_call(struct nl_msg *msg)

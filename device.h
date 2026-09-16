@@ -350,6 +350,7 @@ struct device *device_create(const char *name, struct device_type *type,
 void device_merge_settings(struct device *dev, struct device_settings *n);
 void device_init_settings(struct device *dev, struct blob_attr **tb);
 void device_init_pending(void);
+void device_recheck_all(void);
 
 enum dev_change_type
 device_apply_config(struct device *dev, struct device_type *type,
