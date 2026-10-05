@@ -2724,11 +2724,16 @@ system_if_get_parent(struct device *dev)
 
 	iflink = strtoul(buf, NULL, 0);
 	ifindex = system_if_resolve(dev);
-	if (!iflink || iflink == ifindex)
+	if (!iflink || !ifindex || iflink == ifindex)
 		return NULL;
 
+	/*
+	 * While a device is being deleted, its name lookup can already fail
+	 * while its index still resolves, so iflink maps back to the device
+	 * itself. A device is never its own parent.
+	 */
 	devname = if_indextoname(iflink, buf);
-	if (!devname)
+	if (!devname || !strcmp(devname, dev->ifname))
 		return NULL;
 
 	return device_get(devname, true);
