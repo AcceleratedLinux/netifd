@@ -1519,5 +1519,9 @@ void device_hotplug_event(const char *name, bool add)
 	if (!dev || dev->type != &simple_device_type)
 		return;
 
+	/* the add uevent precedes the name being resolvable; RTM_NEWLINK follows */
+	if (add && !dev->sys_present && !system_if_resolve(dev))
+		return;
+
 	device_set_present(dev, add);
 }
